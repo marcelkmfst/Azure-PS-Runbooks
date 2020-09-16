@@ -72,17 +72,17 @@ try
         #}
     
         Write-Host -ForegroundColor Cyan ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $policy.policyDefinitionReferenceId)
-        $RemediationTaskName = Start-AzPolicyRemediation -Name (New-Guid) -Scope "/subscriptions/9076d78f-8a52-4f8d-8567-11b42296bf31/resourceGroups/RG-Policyeval" -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
-        $RemediationTaskName
-        $RemediationTask = Get-AzPolicyRemediation -Name $RemediationTaskName.Name
-        $Remediationtaskname = $RemediationTask.Name
+        $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -Scope "/subscriptions/9076d78f-8a52-4f8d-8567-11b42296bf31/resourceGroups/RG-Policyeval" -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
+        $RemediationTask
+        # $RemediationTaskName = Get-AzPolicyRemediation -Name $RemediationTaskName.Name
+        # $Remediationtaskname = $RemediationTask.Name
         $PolicyAssignmentObject = Get-AzPolicyAssignment -Id $PolicyassignmentID
         $PolicyAssignmentname = $PolicyAssignmentObject.Name
     
         while ($Remediationtask.ProvisioningState -eq "Accepted") 
         {
             Write-Host -ForegroundColor Blue "Policy Remediation in progress...."    
-            Start-Sleep -Seconds 5
+            Start-Sleep -Seconds 10
         }
     
     
