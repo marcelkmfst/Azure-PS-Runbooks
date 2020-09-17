@@ -1,4 +1,5 @@
-## Runbook which performs remidiation per PolicyAssignment (re-evaluation is triggered before to capture not-started state)
+##Runbook which remediates all NON-compliant resources
+
 param
 (
     [parameter(Mandatory = $false)]
@@ -10,14 +11,12 @@ param
     [parameter(Mandatory = $false)]
     [string] $SubscriptionID = "9076d78f-8a52-4f8d-8567-11b42296bf31",
     
-    [parameter(Mandatory = $true)]
-    [string] $PolicyassignmentID,
+     
+    [parameter(Mandatory = $false)]
+    [string] $RemediationName = (New-Guid),
 
-    [parameter(Mandatory = $false)]
-    [string] $initiativeID = "/providers/Microsoft.Management/managementGroups/110c879b-9489-4244-9d7e-113d8dcf5875/providers/Microsoft.Authorization/policySetDefinitions/f68c4d4a-10c4-4b7c-9baa-61425f442b21",
- 
-    [parameter(Mandatory = $false)]
-    [string] $RemediationName = (New-Guid)
+    [parameter(Mandatory = $true)]
+    [string] $managementGroupID = "MK101CS"
 )
  
 $VerbosePreference = "Continue"
@@ -51,6 +50,14 @@ $ErrorActionPreference = "Stop"
 # }
  
 #Perform Policy remedation for the subscriptions
+
+# be careful, collects all policies to which the logged on account has permissions
+# current example performs remediation for all Management groups
+$currentpolicystate = Get-Azpolicystatesummary  ## gives only all non-compliant policies and Get-azpolicystate gives all
+$nonCompliancePolicyDefinitions = (Get-AzPolicyStateSummary -ManagementGroupName $managementGroupid).PolicyAssignments | where {$_.PolicyAssignmentId -like "/providers/microsoft.management/managementgroups/$managementGroupID/*"}
+
+#above outputs list with all non-compliant policies
+
 try
 {
     [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
@@ -58,9 +65,8 @@ try
 
     Select-AzSubscription -Subscription $subscriptionname
   
-    $initiative = Get-AzPolicySetDefinition -id $initiativeID
-    $policies = $initiative.Properties.PolicyDefinitions
-    foreach($policy in $policies)
+    
+    foreach($policy in $nonCompliancePolicyDefinitions)
     {
         Write-Host  "Performing Policy Remediation for Subscription $subscriptionname"
  
@@ -83,30 +89,30 @@ try
         while ($Remediationtask.ProvisioningState -eq "Accepted") 
         {
             Write-Output "Remedationtask $RemediationTaskmame in queue - waiting for execution"
-            start-sleep -seconds 10
+            start-sleep -seconds 3
             $RemediationTask = Get-AzPolicyRemediation -ResourceId $RemediationTask.Id
         }
     
     
         while ($Remediationtask.ProvisioningState -eq "Evaluating") 
         {
-            Write-Output "Policy Remediation in progress...."    
-            Start-Sleep -Seconds 10
+            Write-Host "Policy Remediation in progress...."    
+            Start-Sleep -Seconds 3
             $RemediationTask = Get-AzPolicyRemediation -ResourceId $RemediationTask.Id
         }
     
     
         if ($Remediationtask.ProvisioningState -eq "Failed")
         {
-            Write-Output "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname failed"
+            Write-Host -ForegroundColor Red "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname failed"
         }
         elseif ($Remediationtask.ProvisioningState -eq "Succeeded") 
         {
-           Write-Output "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname was successful"
+            Write-Host -ForegroundColor green "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname was successful"
         }
         else 
         {
-            Write-Output "Unknown state of Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname"
+            Write-Host -ForegroundColor yellow "Unknown state of Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname"
         }
     }
 }

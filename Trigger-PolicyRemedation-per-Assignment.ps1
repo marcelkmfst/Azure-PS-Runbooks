@@ -1,4 +1,4 @@
-## Runbook which performs remidiation per PolicyAssignment (re-evaluation is triggered before to capture not-started state)
+## Runbook which performs remidiation per PolicyAssignment 
 param
 (
     [parameter(Mandatory = $false)]
@@ -10,11 +10,11 @@ param
     [parameter(Mandatory = $false)]
     [string] $SubscriptionID = "9076d78f-8a52-4f8d-8567-11b42296bf31",
     
-    [parameter(Mandatory = $true)]
-    [string] $PolicyassignmentID,
+    [parameter(Mandatory = $false)]
+    [string] $PolicyassignmentID = "/subscriptions/9076d78f-8a52-4f8d-8567-11b42296bf31/resourceGroups/RG-Policyeval/providers/Microsoft.Authorization/policyAssignments/0764d41083184978964b43fd",
 
     [parameter(Mandatory = $false)]
-    [string] $initiativeID = "/providers/Microsoft.Management/managementGroups/110c879b-9489-4244-9d7e-113d8dcf5875/providers/Microsoft.Authorization/policySetDefinitions/f68c4d4a-10c4-4b7c-9baa-61425f442b21",
+    [string] $initiativeID = ",
  
     [parameter(Mandatory = $false)]
     [string] $RemediationName = (New-Guid)
@@ -23,32 +23,32 @@ param
 $VerbosePreference = "Continue"
 $ErrorActionPreference = "Stop"
  
-# [string] $connectionName = "AzureRunAsConnection"
-# try
-# {
-#     # Get the connection "AzureRunAsConnection"
-#     $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName
+[string] $connectionName = "AzureRunAsConnection"
+try
+{
+    # Get the connection "AzureRunAsConnection"
+    $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName
  
-#     Write-Host "Logging in to Azure..."
-#     Connect-AzAccount `
-#         -ServicePrincipal `
-#         -TenantId $servicePrincipalConnection.TenantId `
-#         -ApplicationId $servicePrincipalConnection.ApplicationId `
-#         -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint
-# }
-# catch 
-# {
-#     if (!$servicePrincipalConnection)
-#     {
-#         $ErrorMessage = ("Connection {0} not found." -f $connectionName)
-#         throw $ErrorMessage
-#     }
-#     else
-#     { 
-#         Write-Error -Message $_.Exception
-#         throw $_.Exception
-#     }
-# }
+    Write-Host "Logging in to Azure..."
+    Connect-AzAccount `
+        -ServicePrincipal `
+        -TenantId $servicePrincipalConnection.TenantId `
+        -ApplicationId $servicePrincipalConnection.ApplicationId `
+        -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint
+}
+catch 
+{
+    if (!$servicePrincipalConnection)
+    {
+        $ErrorMessage = ("Connection {0} not found." -f $connectionName)
+        throw $ErrorMessage
+    }
+    else
+    { 
+        Write-Error -Message $_.Exception
+        throw $_.Exception
+    }
+}
  
 #Perform Policy remedation for the subscriptions
 try
