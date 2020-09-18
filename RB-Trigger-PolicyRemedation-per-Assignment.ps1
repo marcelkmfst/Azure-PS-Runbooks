@@ -2,9 +2,7 @@
 ## per default, remedation will be performed on subscription level unless you specify A Resource Group or Management GroupID
 param
 (
-    [parameter(Mandatory = $false)]
-    [string] $resourceGroupName,
-    
+      
     [parameter(Mandatory = $false)]
     [string] $azureRunAsConnectionName = "AzureRunAsConnection",
     
@@ -80,10 +78,10 @@ try
         $PolicyAssignmentname = $PolicyAssignmentObject.Name
         }
 
-        elseif ($Resourcegroup) {
-
+        elseif ($Resourcegroup) 
+        {
             Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $policy.policyDefinitionReferenceId)
-            $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -ResourceGroupName $ResourceGroup -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
+            $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -ResourceGroup $ResourceGroup -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
             $RemediationTask
             $PolicyAssignmentObject = Get-AzPolicyAssignment -Id $PolicyassignmentID
             $PolicyAssignmentname = $PolicyAssignmentObject.Name
@@ -131,7 +129,7 @@ try
 catch
 {
     [string] $errorMessage = ("{0}`r`n{1}" -f $_[0].Exception, $_.InvocationInfo.PositionMessage)
-    Write-Output ("an error occured: {0}" -f $errorMessage ) -ForegroundColor Red
+    Write-Output ("an error occured: {0}" -f $errorMessage ) 
     throw $_.Exception
 }
  
