@@ -11,10 +11,10 @@ param
     [parameter(Mandatory = $false)]
     [string] $SubscriptionID,
     
-    [parameter(Mandatory = $false)]
+    [parameter(Mandatory = $true)]
     [string] $PolicyassignmentID,
 
-    [parameter(Mandatory = $false)]
+    [parameter(Mandatory = $true)]
     [string] $initiativeID,
 
     [parameter(Mandatory = $false)]
