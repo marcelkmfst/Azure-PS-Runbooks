@@ -122,7 +122,7 @@ try
         }
         else 
         {
-            Write-Output "Unknown state of Remediaton Task $remediationtask.name for PolicyAssignment $PolicyAssignmentname"
+            Write-Output "Unknown state of Remediaton Task for PolicyAssignment $PolicyAssignmentname"
         }
     }
 }
