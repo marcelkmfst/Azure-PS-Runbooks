@@ -1,4 +1,5 @@
 ## Runbook which performs remidiation per PolicyAssignment 
+## per default, remedation will be performed on subscription level unless you specify A Resource Group or Management GroupID
 param
 (
     [parameter(Mandatory = $false)]
@@ -8,14 +9,23 @@ param
     [string] $azureRunAsConnectionName = "AzureRunAsConnection",
     
     [parameter(Mandatory = $false)]
-    [string] $SubscriptionID = "9076d78f-8a52-4f8d-8567-11b42296bf31",
+    [string] $SubscriptionID,
     
     [parameter(Mandatory = $false)]
-    [string] $PolicyassignmentID = "/subscriptions/9076d78f-8a52-4f8d-8567-11b42296bf31/resourceGroups/RG-Policyeval/providers/Microsoft.Authorization/policyAssignments/0764d41083184978964b43fd",
+    [string] $PolicyassignmentID,
 
     [parameter(Mandatory = $false)]
-    [string] $initiativeID = ",
+    [string] $initiativeID,
+
+    [parameter(Mandatory = $false)]
+    [string] $managementGroupID,
  
+    [parameter(Mandatory = $false)]
+    [string] $Subscription,
+
+    [parameter(Mandatory = $false)]
+    [string] $ResourceGroup,
+
     [parameter(Mandatory = $false)]
     [string] $RemediationName = (New-Guid)
 )
@@ -64,26 +74,37 @@ try
     {
         Write-Host  "Performing Policy Remediation for Subscription $subscriptionname"
  
-        #Write-Host ("Checking existing remeditation: {0} and policyID: {1}" -f $RemediationName, $PolicyassignmentID)
-        #$policyRemediation = Get-AzPolicyRemediation -Filter ("PolicyAssignmentId eq '{0}'" -f $PolicyassignmentID) -ErrorAction SilentlyContinue | Where-Object {$psItem.ProvisioningState -eq "Evaluating"}
-        #if($null -ne $policyRemediation)
-        #{
-        #    Write-Host ("PolicyRemediation already in progress: {0}" -f ($policyRemediation | Out-String) )
-        #    return ""
-        #}
-    
+        if ($ManagementGroup)
+        {
         Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $policy.policyDefinitionReferenceId)
-        $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -Scope "/subscriptions/9076d78f-8a52-4f8d-8567-11b42296bf31/resourceGroups/RG-Policyeval" -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
+        $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -ManagementGroupName $managementGroupID -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
         $RemediationTask
-        # $RemediationTaskName = Get-AzPolicyRemediation -Name $RemediationTaskName.Name
-        # $Remediationtaskname = $RemediationTask.Name
         $PolicyAssignmentObject = Get-AzPolicyAssignment -Id $PolicyassignmentID
         $PolicyAssignmentname = $PolicyAssignmentObject.Name
+        }
+
+        elseif ($Resourcegroup) {
+
+            Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $policy.policyDefinitionReferenceId)
+            $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -ResourceGroupName $ResourceGroup -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
+            $RemediationTask
+            $PolicyAssignmentObject = Get-AzPolicyAssignment -Id $PolicyassignmentID
+            $PolicyAssignmentname = $PolicyAssignmentObject.Name
+            
+        }
+
+        else {
+            Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $policy.policyDefinitionReferenceId)
+            $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) -PolicyAssignmentId $PolicyassignmentID -ResourceDiscoveryMode ReEvaluateCompliance -PolicyDefinitionReferenceId $policy.policyDefinitionReferenceId
+            $RemediationTask
+            $PolicyAssignmentObject = Get-AzPolicyAssignment -Id $PolicyassignmentID
+            $PolicyAssignmentname = $PolicyAssignmentObject.Name
+        }
 
         while ($Remediationtask.ProvisioningState -eq "Accepted") 
         {
             Write-Output "Remedationtask $RemediationTaskmame in queue - waiting for execution"
-            start-sleep -seconds 10
+            start-sleep -seconds 3
             $RemediationTask = Get-AzPolicyRemediation -ResourceId $RemediationTask.Id
         }
     
@@ -91,22 +112,22 @@ try
         while ($Remediationtask.ProvisioningState -eq "Evaluating") 
         {
             Write-Output "Policy Remediation in progress...."    
-            Start-Sleep -Seconds 10
+            Start-Sleep -Seconds 3
             $RemediationTask = Get-AzPolicyRemediation -ResourceId $RemediationTask.Id
         }
     
     
         if ($Remediationtask.ProvisioningState -eq "Failed")
         {
-            Write-Output "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname failed"
+            Write-Output "Remediaton Task $remediationtask.name for PolicyAssignment $PolicyAssignmentname failed"
         }
         elseif ($Remediationtask.ProvisioningState -eq "Succeeded") 
         {
-           Write-Output "Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname was successful"
+           Write-Output "Remediaton Task $remediationtask.name for PolicyAssignment $PolicyAssignmentname was successful"
         }
         else 
         {
-            Write-Output "Unknown state of Remediaton Task $remediationtaskname for PolicyAssignment $PolicyAssignmentname"
+            Write-Output "Unknown state of Remediaton Task $remediationtask.name for PolicyAssignment $PolicyAssignmentname"
         }
     }
 }
