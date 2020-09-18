@@ -21,9 +21,6 @@ param
     [string] $managementGroupID,
  
     [parameter(Mandatory = $false)]
-    [string] $Subscription,
-
-    [parameter(Mandatory = $false)]
     [string] $ResourceGroup,
 
     [parameter(Mandatory = $false)]
@@ -39,7 +36,7 @@ try
     # Get the connection "AzureRunAsConnection"
     $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName
  
-    Write-Host "Logging in to Azure..."
+    Write-Output "Logging in to Azure..."
     Connect-AzAccount `
         -ServicePrincipal `
         -TenantId $servicePrincipalConnection.TenantId `
@@ -63,16 +60,16 @@ catch
 #Perform Policy remedation for the subscriptions
 try
 {
-    [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
+    # [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
  
 
-    Select-AzSubscription -Subscription $subscriptionname
+    # Select-AzSubscription -Subscription $subscriptionname
   
     $initiative = Get-AzPolicySetDefinition -id $initiativeID
     $policies = $initiative.Properties.PolicyDefinitions
     foreach($policy in $policies)
     {
-        Write-Host  "Performing Policy Remediation for Subscription $subscriptionname"
+        Write-Output  "Initializing Policy Remediaton"
  
         if ($ManagementGroup)
         {
@@ -134,7 +131,7 @@ try
 catch
 {
     [string] $errorMessage = ("{0}`r`n{1}" -f $_[0].Exception, $_.InvocationInfo.PositionMessage)
-    Write-Host ("an error occured: {0}" -f $errorMessage ) -ForegroundColor Red
+    Write-Output ("an error occured: {0}" -f $errorMessage ) -ForegroundColor Red
     throw $_.Exception
 }
  
