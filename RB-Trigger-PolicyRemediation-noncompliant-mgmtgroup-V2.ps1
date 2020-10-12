@@ -1,16 +1,16 @@
-##Runbook which remediates all NON-compliant resources for a given Subscription
+##Runbook which remediates all NON-compliant resources at Management Group Level
  
 param
 (
-    [parameter(Mandatory = $false)]
-    [string] $resourceGroupName,
-    
+     
     [parameter(Mandatory = $false)]
     [string] $azureRunAsConnectionName = "AzureRunAsConnection",
     
-    [parameter(Mandatory = $false)]
-    [string] $SubscriptionID,
+    [parameter(Mandatory = $true)]
+    [string] $managementgroupid, 
     
+    [parameter(Mandatory = $true)]
+    [string] $managemengroupname, 
      
     [parameter(Mandatory = $false)]
     [string] $RemediationName = (New-Guid)
@@ -45,35 +45,32 @@ catch
     }
 }
  
-#Perform Policy remedation for the subscriptions
-# be careful, collects all policies to which the logged on account has permissions
-# current example performs remediation for all Management groups
-#$currentpolicystate = Get-Azpolicystatesummary  ## gives only all non-compliant policies and Get-azpolicystate gives all
+
+
 try
 {
-    # outcomment, because the subscription is actually not attached to a ManagementGroup from Malon or Vinzenz.
-    #$nonCompliancePolicyDefinitions = (Get-AzPolicyStateSummary -SubscriptionId $SubscriptionID).PolicyAssignments | where {$_.PolicyAssignmentId -like "/providers/microsoft.management/managementgroups/$managementGroupID/*"}
-    Write-Output "Loading the PolicySummary from subscription"
-    $policyAssignment = (Get-AzPolicyStateSummary -SubscriptionId $SubscriptionID).PolicyAssignments | Where-Object {$PSItem.PolicyAssignmentId -like ("/subscriptions/{0}/providers/microsoft.authorization/policyassignments/*" -f $SubscriptionID)}
+   
+    
+    $policyAssignment = (Get-AzPolicyStateSummary -managementgroupname $managementgroupname).PolicyAssignments | Where-Object {$PSItem.PolicyAssignmentId -like ("/providers/microsoft.management/managementgroups/$managementgroupid/*")}
     Write-Output "OK"
-    Write-Output ("Found '{0}' policyAssignment" -f $policyAssignment.Count)
+    Write-Output ("Found '{0}' policyAssignments" -f $policyAssignment.Count)
  
-    #above outputs list with all non-compliant policies
-    [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
-    Select-AzSubscription -Subscription $subscriptionname | out-null
+    # #above outputs list with all non-compliant policies
+    # [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
+    # Select-AzSubscription -Subscription $subscriptionname | out-null
     
     foreach($policy in $policyAssignment)
     {
         [string] $policyAssignmentId = $policy.PolicyAssignmentId
-        Write-Output ("Processing PolicyAssignmentID: '{0}' for Subscription: {1}" -f $policyAssignmentId, $subscriptionname)
+        Write-Output ("Processing PolicyAssignmentID: '{0}' for ManagementGroup: $managementgroupname" -f $policyAssignmentId)
         foreach($PolicyDefinitionReferenceId in $policy.PolicyDefinitions)
         {
-            Write-Output ("Performing PolicyDefinition Remediation: '{0}' for Subscription: {1}" -f $policy.PolicyAssignmentId, $subscriptionname)
+            Write-Output ("Performing PolicyDefinition Remediation: $policy.PolicyAssignmentId for ManagementGroup: $managementgroupname")
     
             Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $PolicyDefinitionReferenceId)
             $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) `
                                 -PolicyAssignmentId $policy.PolicyAssignmentId `
-                                -ResourceDiscoveryMode ReEvaluateCompliance `
+                                -ResourceDiscoveryMode ExistingNonCompliant `
                                 -PolicyDefinitionReferenceId $PolicyDefinitionReferenceId
  
             while ($Remediationtask.ProvisioningState -eq "Accepted") 
@@ -112,7 +109,8 @@ try
 catch
 {
     [string] $errorMessage = ("{0}`r`n{1}" -f $_[0].Exception, $_.InvocationInfo.PositionMessage)
-    Write-output ("an error occured: {0}" -f $errorMessage ) -ForegroundColor Red
+    Write-output ("an error occured: {0}" -f $errorMessage )
     throw $_.Exception
 }
+ 
  
