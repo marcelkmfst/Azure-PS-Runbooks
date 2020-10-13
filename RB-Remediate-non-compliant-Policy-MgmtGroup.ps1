@@ -27,7 +27,7 @@ try
     # Get the connection "AzureRunAsConnection "
     $servicePrincipalConnection = Get-AutomationConnection -Name $connectionName       
     "Logging in to Azure..."
-    Connect-AzureRmAccount `
+    Connect-AzAccount `
         -ServicePrincipal `
         -TenantId $servicePrincipalConnection.TenantId `
         -ApplicationId $servicePrincipalConnection.ApplicationId `
@@ -63,9 +63,9 @@ foreach ($nonCompliancePolicyDefinition in $nonCompliancePolicyDefinitions) {
         foreach ($policy in $nonCompliantPolicies) {
             $DateTime = ("{0:yyyy-MM-dd-HH-mm-ss}" -f (get-date)).ToString()
             $name = "autoremediation-" + $DateTime
-            $polName = (Get-AzureRmPolicyDefinition -Id $policy.PolicyDefinitionId).Properties.displayName
+            $polName = (Get-AzPolicyDefinition -Id $policy.PolicyDefinitionId).Properties.displayName
             try {
-                $job = Start-AzureRmPolicyRemediation -ManagementGroupName $managementGroupName -PolicyAssignmentId $nonCompliancePolicyDefinition.PolicyAssignmentId -Name $name -PolicyDefinitionReferenceId $policy.PolicyDefinitionReferenceId -ErrorAction Stop -ErrorVariable errmsg | Out-Null
+                $job = Start-AzPolicyRemediation -ManagementGroupName $managementGroupName -PolicyAssignmentId $nonCompliancePolicyDefinition.PolicyAssignmentId -Name $name -PolicyDefinitionReferenceId $policy.PolicyDefinitionReferenceId -ErrorAction Stop -ErrorVariable errmsg | Out-Null
                 Write-Output "+ Start Policy remediation: $polName"
             }
             catch {
