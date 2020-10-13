@@ -50,22 +50,19 @@ catch
 try
 {
    
-    
-    $policyAssignment = (Get-AzPolicyStateSummary -managementgroupname $managementgroupname).PolicyAssignments | Where-Object {$PSItem.PolicyAssignmentId -like ("/providers/microsoft.management/managementgroups/$managementgroupid/*")}
+    Write-Output "Loading the PolicySummary from the ManagmentGroup $Managementgroupname"
+    $policyAssignments = (Get-AzPolicyStateSummary -managementgroupname $managementgroupname).PolicyAssignments | Where-Object {$PSItem.PolicyAssignmentId -like ("/providers/microsoft.management/managementgroups/$managementgroupid/*")}
     Write-Output "OK"
-    Write-Output ("Found '{0}' policyAssignments" -f $policyAssignment.Count)
+    Write-Output ("Found '{0}' policyAssignments at ManagementGroup $ManagementGroupName" -f $policyAssignment.Count)
  
-    # #above outputs list with all non-compliant policies
-    # [string] $subscriptionname = (Get-AzSubscription -SubscriptionId $SubscriptionID).name
-    # Select-AzSubscription -Subscription $subscriptionname | out-null
-    
-    foreach($policy in $policyAssignment)
+      
+    foreach($policyAssignmentID in $policyAssignments)
     {
-        [string] $policyAssignmentId = $policy.PolicyAssignmentId
+        [string] $policyAssignmentId = $policyAssignment.PolicyAssignmentId
         Write-Output ("Processing PolicyAssignmentID: '{0}' for ManagementGroup: $managementgroupname" -f $policyAssignmentId)
-        foreach($PolicyDefinitionReferenceId in $policy.PolicyDefinitions)
+        foreach($policydefinition in $policyassignment.PolicyDefinitions)
         {
-            Write-Output ("Performing PolicyDefinition Remediation: $policy.PolicyAssignmentId for ManagementGroup: $managementgroupname")
+            Write-Output ("Performing PolicyDefinition Remediation: $policydefintion.PolicyAssignmentId for ManagementGroup: $managementgroupname")
     
             Write-Output ("Start Policy Remediation for policyDefinitionReferenceId: {0}" -f $PolicyDefinitionReferenceId)
             $RemediationTask = Start-AzPolicyRemediation -Name (New-Guid) `
