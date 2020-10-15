@@ -7,10 +7,13 @@
   
     [Parameter (Mandatory= $true)]
     [String] $ApplicationGatewayResourceGroup,
+
+    [Parameter (Mandatory= $false)]
+    [String] $Subscriptionname,
   
     [Parameter (Mandatory= $true)]
-    [boolean] $start,
-     
+    [boolean] $start
+  )
     
   $connectionName = "AzureRunAsConnection"
   try
@@ -30,24 +33,41 @@
       {
           $ErrorMessage = "Connection $connectionName not found."
           throw $ErrorMessage
-      } else{
+      } 
+      else {
           Write-Error -Message $_.Exception
           throw $_.Exception
       }
   }
   
+  if ($Subscriptionname)
+  {
+    set-azcontext -subscription $Subscriptionname
+  }
   
-  # Start a firewall
+  # Start or Stopp an Application Gateway
 
-  $appgwobject = Get-AzApplicationgateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGrou
+  $appgwobject = Get-AzApplicationgateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
 
   if ($start -eq "true") {
       Start-AzApplicationGateway -ApplicationGateway $appgwobject
       
+      while ($appgwobject.OperationalState -eq "Starting") 
+      {
+        Write-Output "Application Gateway $appgwobject.name is still starting"
+        $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
+      }
+      Write-Output "The Application Gateway $appgwobject.name is now $appgwobject.Operationalstate"
   }
 
   else {
     Stop-AzApplicationGateway -ApplicationGateway $appgwobject
+    while ($appgwobject.ProvisioningState -eq "Updating") 
+      {
+        Write-Output "Application Gateway $appgwobject.name is still stopping"
+        $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
+      }
+    Write-Output "The Application Gateway $appgwobject.name is now $appgwobject.Operationalstate"
   }
 
   
