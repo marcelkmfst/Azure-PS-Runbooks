@@ -66,7 +66,7 @@
   }
 
   else {
-    $job = Start-Job -Name StopAppGw  -ScriptBlock {
+    $job = Start-Job -Name StopAppGw -ScriptBlock {
       param($appgwname, $resourcegroup)
       $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
       stop-AzApplicationGateway -ApplicationGateway $appgwinblock
