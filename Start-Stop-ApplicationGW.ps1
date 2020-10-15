@@ -45,7 +45,6 @@
     set-azcontext -subscription $Subscriptionname
   }
   
-  # Start or Stop an Application Gateway
 
   $appgwobject = Get-AzApplicationgateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
 
