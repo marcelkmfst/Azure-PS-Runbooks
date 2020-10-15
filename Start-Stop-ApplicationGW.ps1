@@ -45,29 +45,40 @@
     set-azcontext -subscription $Subscriptionname
   }
   
-  # Start or Stopp an Application Gateway
+  # Start or Stop an Application Gateway
 
   $appgwobject = Get-AzApplicationgateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
 
   if ($start -eq "true") {
-      Start-AzApplicationGateway -ApplicationGateway $appgwobject
+    $job = Start-Job -Name StartAppGw -InputObject $appgwobject -ScriptBlock {
+      param($appgwname, $resourcegroup)
+      $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
+      Start-AzApplicationGateway -ApplicationGateway $appgwinblock
+    } -ArgumentList $ApplicationGateway, $ApplicationGatewayResourceGroup
       
-      while ($appgwobject.OperationalState -eq "Starting") 
+      while ($job.state -eq "Running") 
       {
-        Write-Output "Application Gateway $appgwobject.name is still starting"
+        Write-Output "Application Gateway $($appgwobject.name) is still starting"
         $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
+        $job = Get-Job -Name StartAppGw
       }
-      Write-Output "The Application Gateway $appgwobject.name is now $appgwobject.Operationalstate"
+      Write-Output "The Application Gateway $($appgwobject.name) is now $($appgwobject.Operationalstate)"
   }
 
   else {
-    Stop-AzApplicationGateway -ApplicationGateway $appgwobject
-    while ($appgwobject.ProvisioningState -eq "Updating") 
+    $job = Start-Job -Name StopAppGw -InputObject $appgwobject -ScriptBlock {
+      param($appgwname, $resourcegroup)
+      $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
+      Start-AzApplicationGateway -ApplicationGateway $appgwinblock
+    } -ArgumentList $ApplicationGateway, $ApplicationGatewayResourceGroup
+    
+    while ($job.state -eq "Running") 
       {
-        Write-Output "Application Gateway $appgwobject.name is still stopping"
+        Write-Output "Application Gateway $($appgwobject.name) is still stopping"
         $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
+        $job = Get-Job -Name StopAppGw
       }
-    Write-Output "The Application Gateway $appgwobject.name is now $appgwobject.Operationalstate"
+    Write-Output "The Application Gateway $($appgwobject.name) is now $($appgwobject.Operationalstate)"
   }
 
   
