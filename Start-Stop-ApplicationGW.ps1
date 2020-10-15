@@ -1,4 +1,4 @@
-  ########### Runbook by MK to start or Stop Appication Gateway instance
+  ########### Runbook by MK to start or Stop Appication Gateway instance 
   ### note - stopped Application Gateways do not incur charges
   Param
   (
@@ -50,7 +50,7 @@
   $appgwobject = Get-AzApplicationgateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
 
   if ($start -eq "true") {
-    $job = Start-Job -Name StartAppGw -InputObject $appgwobject -ScriptBlock {
+    $job = Start-Job -Name StartAppGw -ScriptBlock {
       param($appgwname, $resourcegroup)
       $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
       Start-AzApplicationGateway -ApplicationGateway $appgwinblock
@@ -66,10 +66,10 @@
   }
 
   else {
-    $job = Start-Job -Name StopAppGw -InputObject $appgwobject -ScriptBlock {
+    $job = Start-Job -Name StopAppGw  -ScriptBlock {
       param($appgwname, $resourcegroup)
       $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
-      Start-AzApplicationGateway -ApplicationGateway $appgwinblock
+      stop-AzApplicationGateway -ApplicationGateway $appgwinblock
     } -ArgumentList $ApplicationGateway, $ApplicationGatewayResourceGroup
     
     while ($job.state -eq "Running") 
