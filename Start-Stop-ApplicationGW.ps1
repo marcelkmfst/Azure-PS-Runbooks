@@ -50,8 +50,8 @@
 
   if ($start -eq "true") {
     $job = Start-Job -Name StartAppGw -ScriptBlock {
-      param($appgwname, $resourcegroup)
-      $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
+      param($ApplicationGateway, $ApplicationGatewayResourceGroup)
+      $appgwinblock = Get-AzApplicationGateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
       Start-AzApplicationGateway -ApplicationGateway $appgwinblock
     } -ArgumentList $ApplicationGateway, $ApplicationGatewayResourceGroup
       
@@ -60,14 +60,15 @@
         Write-Output "Application Gateway $($appgwobject.name) is still starting"
         $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
         $job = Get-Job -Name StartAppGw
+        start-sleep 10
       }
       Write-Output "The Application Gateway $($appgwobject.name) is now $($appgwobject.Operationalstate)"
   }
 
   else {
     $job = Start-Job -Name StopAppGw -ScriptBlock {
-      param($appgwname, $resourcegroup)
-      $appgwinblock = Get-AzApplicationGateway -Name $appgwname -ResourceGroupName $resourcegroup
+      param($ApplicationGateway, $ApplicationGatewayResourceGroup)
+      $appgwinblock = Get-AzApplicationGateway -Name $ApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup
       stop-AzApplicationGateway -ApplicationGateway $appgwinblock
     } -ArgumentList $ApplicationGateway, $ApplicationGatewayResourceGroup
     
@@ -76,6 +77,7 @@
         Write-Output "Application Gateway $($appgwobject.name) is still stopping"
         $appgwobject = Get-AzApplicationGateway -ResourceGroupName $ApplicationGatewayResourceGroup -Name $ApplicationGateway
         $job = Get-Job -Name StopAppGw
+        start-sleep 10
       }
     Write-Output "The Application Gateway $($appgwobject.name) is now $($appgwobject.Operationalstate)"
   }
