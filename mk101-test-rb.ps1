@@ -1,1 +1,0 @@
-new-item -Path 'C:\createdbyazureautomation' -ItemType Directory
